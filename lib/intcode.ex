@@ -6,7 +6,8 @@ defmodule Intcode do
   defp execute(code, instruction_pointer) do
     case step(code, instruction_pointer) do
       {:cont, new_code, new_instruction_pointer} -> execute(new_code, new_instruction_pointer)
-      {:halt, new_code, _} -> new_code
+      {:halt, new_code, _} -> {:ok, new_code}
+      {:error, _, _} -> {:error}
     end
   end
 
@@ -37,10 +38,19 @@ defmodule Intcode do
 
     [arg1, arg2] = [arg1_address, arg2_address] |> Enum.map(&Enum.at(code, &1))
 
-    {
-      :cont,
-      code |> List.replace_at(result_address, binary_fun.(arg1, arg2)),
-      instruction_pointer + 4
-    }
+    case {arg1, arg2} do
+      {nil, _} ->
+        {:error, code, instruction_pointer}
+
+      {_, nil} ->
+        {:error, code, instruction_pointer}
+
+      {arg1, arg2} ->
+        {
+          :cont,
+          code |> List.replace_at(result_address, binary_fun.(arg1, arg2)),
+          instruction_pointer + 4
+        }
+    end
   end
 end
