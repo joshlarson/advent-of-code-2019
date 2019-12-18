@@ -27,3 +27,17 @@ To clean up
 ```
 git clean -fdx
 ```
+
+### Using `entr`
+
+Tests:
+
+```
+while true; do ls {lib,test,files}/* | entr -cd bash -c "mix test"; done
+```
+
+Actual code:
+
+```
+while true; do ls lib/* files/* | entr -cd bash -c 'mix escript.build; ./advent'; done
+```
