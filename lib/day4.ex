@@ -1,12 +1,22 @@
 defmodule Day4 do
   def main do
-    197487..673251
+    input = 197487..673251
+
+    input
     |> Enum.count(&valid_password/1)
+    |> IO.puts()
+
+    input
+    |> Enum.count(&super_valid_password/1)
     |> IO.puts()
   end
 
   def valid_password(input) do
     has_equal_adjacent_digits(input) && no_decreasing_digits(input)
+  end
+
+  def super_valid_password(input) do
+    has_exactly_two_of_something(input) && no_decreasing_digits(input)
   end
 
   def has_equal_adjacent_digits(input) do
@@ -19,6 +29,14 @@ defmodule Day4 do
     input
     |> digit_pairs()
     |> Enum.all?(fn {a, b} -> a <= b end)
+  end
+
+  def has_exactly_two_of_something(input) do
+    input
+    |> digits()
+    |> Enum.group_by(&(&1))
+    |> Stream.map(fn {_key, value} -> value |> length() end)
+    |> Enum.member?(2)
   end
 
   defp digit_pairs(input) do

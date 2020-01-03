@@ -10,6 +10,17 @@ defmodule Day4Test do
     end
   end
 
+  describe "super_valid_password" do
+    test "examples" do
+      assert Day4.super_valid_password(111111) == false
+      assert Day4.super_valid_password(223450) == false
+      assert Day4.super_valid_password(123789) == false
+      assert Day4.super_valid_password(112233) == true
+      assert Day4.super_valid_password(123444) == false
+      assert Day4.super_valid_password(111122) == true
+    end
+  end
+
   describe "has_equal_adjacent_digits" do
     test "detects trailing digits" do
       assert Day4.has_equal_adjacent_digits(123456) == false
@@ -42,6 +53,20 @@ defmodule Day4Test do
       assert Day4.no_decreasing_digits(111111) == true
       assert Day4.no_decreasing_digits(223450) == false
       assert Day4.no_decreasing_digits(123789) == true
+    end
+  end
+
+  describe "has_exactly_two_of_something" do
+    test "does not rule out sets of digits if they are in sets of two" do
+      assert Day4.has_exactly_two_of_something(112233) == true
+    end
+
+    test "rules out sets of digits that are too long" do
+      assert Day4.has_exactly_two_of_something(123444) == false
+    end
+
+    test "doesn't rule out everything even if it rules out something" do
+      assert Day4.has_exactly_two_of_something(111122) == true
     end
   end
 
