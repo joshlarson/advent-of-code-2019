@@ -61,4 +61,38 @@ defmodule Day3Test do
       assert Day3.closest_intersection_distance("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51\nU98,R91,D20,R16,D67,R40,U7,R15,U6,R7\n")  == 135
     end
   end
+
+  describe "steps_along_wire" do
+    test "works for a wire going right in a straight line" do
+      assert Day3.build_path("R2") |> Day3.steps_along_wire({2, 0}) == 2
+      assert Day3.build_path("R2") |> Day3.steps_along_wire({1, 0}) == 1
+    end
+
+    test "works for a wire going down in a straight line" do
+      assert Day3.build_path("D2") |> Day3.steps_along_wire({0, -1}) == 1
+      assert Day3.build_path("D2") |> Day3.steps_along_wire({0, -2}) == 2
+    end
+  end
+
+  describe "closest_intersection_by_steps" do
+    test "works for this example" do
+      assert Day3.closest_intersection_distance_by_steps("R2\nD2,R2,U2\n")  == 8
+    end
+
+    test "works with a negative coordinate" do
+      assert Day3.closest_intersection_distance_by_steps("L2\nD2,L2,U2\n")  == 8
+    end
+
+    test "works for example 1" do
+      assert Day3.closest_intersection_distance_by_steps("R8,U5,L5,D3\nU7,R6,D4,L4\n")  == 30
+    end
+
+    test "works for example 2" do
+      assert Day3.closest_intersection_distance_by_steps("R75,D30,R83,U83,L12,D49,R71,U7,L72\nU62,R66,U55,R34,D71,R55,D58,R83\n")  == 610
+    end
+
+    test "works for example 3" do
+      assert Day3.closest_intersection_distance_by_steps("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51\nU98,R91,D20,R16,D67,R40,U7,R15,U6,R7\n")  == 410
+    end
+  end
 end
