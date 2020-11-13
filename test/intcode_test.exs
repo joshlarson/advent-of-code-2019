@@ -54,7 +54,7 @@ defmodule IntcodeTest do
         |> Intcode.step()
 
       assert intcode.code == [3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]
-      assert intcode.pointer == 8
+      assert intcode.pointer == 9
     end
   end
 

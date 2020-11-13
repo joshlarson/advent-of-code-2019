@@ -1,7 +1,7 @@
 defmodule Intcode do
   defstruct code: [], pointer: 0
 
-  def execute(intcode = %Intcode{}) do
+  def execute(intcode) do
     case step(intcode) do
       {:cont, new_intcode} -> execute(new_intcode)
       {:halt, new_intcode} -> {:ok, new_intcode}
@@ -9,41 +9,61 @@ defmodule Intcode do
     end
   end
 
-  def step(intcode = %Intcode{code: code, pointer: pointer}) do
-    opcode = code |> Enum.at(pointer)
-    run_opcode(intcode, opcode)
+  def step(intcode) do
+    {new_intcode, opcode, args} = read_args(intcode)
+    run_operation(new_intcode, opcode, args)
   end
 
-  defp run_opcode(intcode, 1) do
-    binary_op(intcode, &(&1 + &2))
+  defp read_args(intcode) do
+    opcode = intcode.code |> Enum.at(intcode.pointer)
+
+    arg_count =
+      %{
+        1 => 4,
+        2 => 4,
+        99 => 1
+      }
+      |> Map.get(opcode)
+
+    {
+      intcode |> advance_pointer(arg_count),
+      opcode,
+      intcode.code |> Enum.drop(intcode.pointer + 1) |> Enum.take(arg_count - 1)
+    }
   end
 
-  defp run_opcode(intcode, 2) do
-    binary_op(intcode, &(&1 * &2))
-  end
+  defp run_operation(intcode, 1, [arg1_address, arg2_address, result_address]) do
+    value_map =
+      new_value_map()
+      |> load_from_address(intcode, :arg1, arg1_address)
+      |> load_from_address(intcode, :arg2, arg2_address)
 
-  defp run_opcode(intcode, 99) do
-    {:halt, intcode}
-  end
-
-  defp binary_op(intcode = %Intcode{code: code, pointer: pointer}, binary_fun) do
-    [arg1_address, arg2_address, result_address] = code |> Enum.drop(pointer + 1) |> Enum.take(3)
-
-    [arg1, arg2] = [arg1_address, arg2_address] |> Enum.map(&Enum.at(code, &1))
-
-    case {arg1, arg2} do
-      {nil, _} ->
+    case value_map do
+      {:error} ->
         {:error}
 
-      {_, nil} ->
-        {:error}
-
-      {arg1, arg2} ->
-        {
-          :cont,
-          intcode |> write_to(result_address, binary_fun.(arg1, arg2)) |> advance_pointer(4)
-        }
+      {:ok, %{arg1: arg1, arg2: arg2}} ->
+        {:cont, intcode |> write_to(result_address, arg1 + arg2)}
     end
+  end
+
+  defp run_operation(intcode, 2, [arg1_address, arg2_address, result_address]) do
+    value_map =
+      new_value_map()
+      |> load_from_address(intcode, :arg1, arg1_address)
+      |> load_from_address(intcode, :arg2, arg2_address)
+
+    case value_map do
+      {:error} ->
+        {:error}
+
+      {:ok, %{arg1: arg1, arg2: arg2}} ->
+        {:cont, intcode |> write_to(result_address, arg1 * arg2)}
+    end
+  end
+
+  defp run_operation(intcode, 99, []) do
+    {:halt, intcode}
   end
 
   defp write_to(intcode, address, value) do
@@ -58,5 +78,20 @@ defmodule Intcode do
       intcode
       | pointer: intcode.pointer + amount
     }
+  end
+
+  defp new_value_map() do
+    {:ok, %{}}
+  end
+
+  defp load_from_address({:error}, _intcode, _arg_name, _address) do
+    {:error}
+  end
+
+  defp load_from_address({:ok, map}, intcode, arg_name, address) do
+    case Enum.at(intcode.code, address) do
+      nil -> {:error}
+      value -> {:ok, map |> Map.put(arg_name, value)}
+    end
   end
 end
