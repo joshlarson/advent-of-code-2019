@@ -14,7 +14,7 @@ defmodule IntcodeTest do
     end
 
     test "opcode 1 errors if there's a buffer overrun" do
-      {:error, _} = %Intcode{code: [1, 0, 10, 3, 99]} |> Intcode.step()
+      {:error} = %Intcode{code: [1, 0, 10, 3, 99]} |> Intcode.step()
     end
 
     test "opcode 2 multiplies things together" do

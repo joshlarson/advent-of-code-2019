@@ -5,7 +5,7 @@ defmodule Intcode do
     case step(intcode) do
       {:cont, new_intcode} -> execute(new_intcode)
       {:halt, new_intcode} -> {:ok, new_intcode}
-      {:error, _} -> {:error}
+      {:error} -> {:error}
     end
   end
 
@@ -33,10 +33,10 @@ defmodule Intcode do
 
     case {arg1, arg2} do
       {nil, _} ->
-        {:error, intcode}
+        {:error}
 
       {_, nil} ->
-        {:error, intcode}
+        {:error}
 
       {arg1, arg2} ->
         {
