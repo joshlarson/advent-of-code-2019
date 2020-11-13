@@ -1,25 +1,17 @@
 defmodule Intcode do
   defstruct code: [], pointer: 0
 
-  def execute(code) do
-    execute(code, 0)
-  end
-
-  defp execute(code, instruction_pointer) do
-    case step(code, instruction_pointer) do
-      {:cont, new_code, new_instruction_pointer} -> execute(new_code, new_instruction_pointer)
-      {:halt, new_code, _} -> {:ok, new_code}
-      {:error, _, _} -> {:error}
+  def execute(intcode = %Intcode{}) do
+    case step(intcode) do
+      {:cont, new_intcode} -> execute(new_intcode)
+      {:halt, new_intcode} -> {:ok, new_intcode}
+      {:error, _} -> {:error}
     end
   end
 
-  def step(code, instruction_pointer) do
-    opcode = code |> Enum.at(instruction_pointer)
-    with_opcode(code, opcode, instruction_pointer)
-  end
-
   def step(%Intcode{code: code, pointer: pointer}) do
-    {symb, code, pointer} = step(code, pointer)
+    opcode = code |> Enum.at(pointer)
+    {symb, code, pointer} = with_opcode(code, opcode, pointer)
     {symb, %Intcode{code: code, pointer: pointer}}
   end
 

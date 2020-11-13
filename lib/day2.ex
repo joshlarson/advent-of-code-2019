@@ -43,7 +43,20 @@ defmodule Day2 do
     code
     |> List.replace_at(1, noun)
     |> List.replace_at(2, verb)
+    |> convert_to_intcode()
     |> Intcode.execute()
+    |> convert_from_intcode()
+  end
+
+  defp convert_to_intcode(code) do
+    %Intcode{code: code}
+  end
+
+  defp convert_from_intcode(result) do
+    case result do
+      {:ok, %Intcode{code: code}} -> {:ok, code}
+      {:error} -> {:error}
+    end
   end
 
   def parse(input) do
