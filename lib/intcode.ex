@@ -1,5 +1,5 @@
 defmodule Intcode do
-  defstruct code: [], pointer: 0
+  defstruct code: [], pointer: 0, input: [], output: []
 
   def execute(intcode) do
     case step(intcode) do
@@ -21,6 +21,8 @@ defmodule Intcode do
       %{
         1 => 4,
         2 => 4,
+        3 => 2,
+        4 => 2,
         99 => 1
       }
       |> Map.get(opcode)
@@ -62,6 +64,23 @@ defmodule Intcode do
     end
   end
 
+  defp run_operation(intcode, 3, [result_address]) do
+    {:ok, {intcode, input}} = intcode |> consume_input()
+
+    {:cont, intcode |> write_to(result_address, input)}
+  end
+
+  defp run_operation(intcode, 4, [arg_address]) do
+    value_map =
+      new_value_map()
+      |> load_from_address(intcode, :arg, arg_address)
+
+    case value_map do
+      {:error} -> {:error}
+      {:ok, %{arg: arg}} -> {:cont, intcode |> write_output(arg)}
+    end
+  end
+
   defp run_operation(intcode, 99, []) do
     {:halt, intcode}
   end
@@ -78,6 +97,14 @@ defmodule Intcode do
       intcode
       | pointer: intcode.pointer + amount
     }
+  end
+
+  defp consume_input(intcode = %Intcode{input: [first | rest]}) do
+    {:ok, {%Intcode{intcode | input: rest}, first}}
+  end
+
+  defp write_output(intcode = %Intcode{output: output}, value) do
+    %Intcode{intcode | output: [value | output]}
   end
 
   defp new_value_map() do
