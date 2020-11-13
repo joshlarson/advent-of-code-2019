@@ -1,6 +1,6 @@
 defmodule Day4 do
   def main do
-    input = 197487..673251
+    input = 197_487..673_251
 
     input
     |> Enum.count(&valid_password/1)
@@ -34,13 +34,14 @@ defmodule Day4 do
   def has_exactly_two_of_something(input) do
     input
     |> digits()
-    |> Enum.group_by(&(&1))
+    |> Enum.group_by(& &1)
     |> Stream.map(fn {_key, value} -> value |> length() end)
     |> Enum.member?(2)
   end
 
   defp digit_pairs(input) do
     digits = digits(input)
+
     Enum.zip(
       Enum.drop(digits, -1),
       Enum.drop(digits, 1)

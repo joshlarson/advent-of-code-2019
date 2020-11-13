@@ -56,6 +56,7 @@ defmodule Day3 do
 
     def intersection_with(%{points: points}, point = %{x: x, y: y}) do
       cell = {x, y}
+
       case points do
         %{^cell => other_point} -> [{point, other_point}]
         %{} -> []
@@ -96,13 +97,13 @@ defmodule Day3 do
   def closest_intersection_distance(input) do
     find_intersections(input)
     |> Stream.map(&IntersectionSet.manhattan_distance/1)
-    |> Enum.min
+    |> Enum.min()
   end
 
   def closest_intersection_distance_by_steps(input) do
     find_intersections(input)
     |> Stream.map(&IntersectionSet.step_sum/1)
-    |> Enum.min
+    |> Enum.min()
   end
 
   def find_intersections(input) do
@@ -143,16 +144,18 @@ defmodule Day3 do
   end
 
   defp parse_path_instruction(str) do
-    <<dir :: binary-1, length_str :: binary>> = str
+    <<dir::binary-1, length_str::binary>> = str
 
     {length, ""} = Integer.parse(length_str)
 
-    fun = %{
-      "R" => &Point.right/1,
-      "U" => &Point.up/1,
-      "L" => &Point.left/1,
-      "D" => &Point.down/1
-    } |> Map.fetch!(dir)
+    fun =
+      %{
+        "R" => &Point.right/1,
+        "U" => &Point.up/1,
+        "L" => &Point.left/1,
+        "D" => &Point.down/1
+      }
+      |> Map.fetch!(dir)
 
     List.duplicate(fun, length)
   end
