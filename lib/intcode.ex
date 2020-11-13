@@ -1,4 +1,6 @@
 defmodule Intcode do
+  defstruct code: [], pointer: 0
+
   def execute(code) do
     execute(code, 0)
   end
@@ -14,6 +16,11 @@ defmodule Intcode do
   def step(code, instruction_pointer) do
     opcode = code |> Enum.at(instruction_pointer)
     with_opcode(code, opcode, instruction_pointer)
+  end
+
+  def step(%Intcode{code: code, pointer: pointer}) do
+    {symb, code, pointer} = step(code, pointer)
+    {symb, %Intcode{code: code, pointer: pointer}}
   end
 
   defp with_opcode(code, 1, instruction_pointer) do
