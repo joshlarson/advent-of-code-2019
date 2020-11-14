@@ -30,6 +30,10 @@ defmodule Intcode do
         2 => 4,
         3 => 2,
         4 => 2,
+        5 => 3,
+        6 => 3,
+        7 => 4,
+        8 => 4,
         99 => 1
       }
       |> Map.get(opcode)
@@ -81,6 +85,52 @@ defmodule Intcode do
     |> evaluate(fn %{arg: arg} -> intcode |> write_output(arg) end)
   end
 
+  defp run_operation(intcode, 5, [arg_parameter, jump_to_parameter]) do
+    new_value_map()
+    |> load_arg(intcode, :arg, arg_parameter)
+    |> load_arg(intcode, :jump_to, jump_to_parameter)
+    |> evaluate(fn
+      %{arg: 0} -> intcode
+      %{jump_to: jump_to} -> intcode |> jump_to(jump_to)
+    end)
+  end
+
+  defp run_operation(intcode, 6, [arg_parameter, jump_to_parameter]) do
+    new_value_map()
+    |> load_arg(intcode, :arg, arg_parameter)
+    |> load_arg(intcode, :jump_to, jump_to_parameter)
+    |> evaluate(fn
+      %{arg: 0, jump_to: jump_to} -> intcode |> jump_to(jump_to)
+      %{} -> intcode
+    end)
+  end
+
+  defp run_operation(intcode, 7, [arg1_parameter, arg2_parameter, result_parameter]) do
+    new_value_map()
+    |> load_arg(intcode, :arg1, arg1_parameter)
+    |> load_arg(intcode, :arg2, arg2_parameter)
+    |> evaluate(fn
+      %{arg1: arg1, arg2: arg2} when arg1 < arg2 ->
+        intcode |> write_to(result_parameter, 1)
+
+      %{} ->
+        intcode |> write_to(result_parameter, 0)
+    end)
+  end
+
+  defp run_operation(intcode, 8, [arg1_parameter, arg2_parameter, result_parameter]) do
+    new_value_map()
+    |> load_arg(intcode, :arg1, arg1_parameter)
+    |> load_arg(intcode, :arg2, arg2_parameter)
+    |> evaluate(fn
+      %{arg1: arg1, arg2: arg2} when arg1 == arg2 ->
+        intcode |> write_to(result_parameter, 1)
+
+      %{} ->
+        intcode |> write_to(result_parameter, 0)
+    end)
+  end
+
   defp run_operation(intcode, 99, []) do
     {:halt, intcode}
   end
@@ -97,6 +147,10 @@ defmodule Intcode do
       intcode
       | pointer: intcode.pointer + amount
     }
+  end
+
+  defp jump_to(intcode, new_location) do
+    %Intcode{intcode | pointer: new_location}
   end
 
   defp consume_input(intcode = %Intcode{input: [first | rest]}) do

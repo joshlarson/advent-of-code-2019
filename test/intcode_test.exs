@@ -82,6 +82,66 @@ defmodule IntcodeTest do
       assert intcode.output == [99]
     end
 
+    test "opcode 5 jumps if its argument is non-zero" do
+      {:cont, intcode} = %Intcode{code: [1105, 2, 4, 99, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [1105, 2, 4, 99, 99]
+    end
+
+    test "opcode 5 does not jump (but does advance) if its argument is zero" do
+      {:cont, intcode} = %Intcode{code: [1105, 0, 4, 99, 99]} |> Intcode.step()
+      assert intcode.pointer == 3
+      assert intcode.code == [1105, 0, 4, 99, 99]
+    end
+
+    test "opcode 6 jumps if its argument is zero" do
+      {:cont, intcode} = %Intcode{code: [1106, 0, 4, 99, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [1106, 0, 4, 99, 99]
+    end
+
+    test "opcode 6 does not jump (but does advance) if its argument is non-zero" do
+      {:cont, intcode} = %Intcode{code: [1106, 2, 4, 99, 99]} |> Intcode.step()
+      assert intcode.pointer == 3
+      assert intcode.code == [1106, 2, 4, 99, 99]
+    end
+
+    test "opcode 7 stores 1 if the first parameter is less than the second" do
+      {:cont, intcode} = %Intcode{code: [1107, 2, 3, 0, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [1, 2, 3, 0, 99]
+    end
+
+    test "opcode 7 stores 0 if the first parameter is equal to the second" do
+      {:cont, intcode} = %Intcode{code: [1107, 3, 3, 0, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [0, 3, 3, 0, 99]
+    end
+
+    test "opcode 7 stores 0 if the first parameter is greater than the second" do
+      {:cont, intcode} = %Intcode{code: [1107, 4, 3, 0, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [0, 4, 3, 0, 99]
+    end
+
+    test "opcode 8 stores 0 if the first parameter is less than the second" do
+      {:cont, intcode} = %Intcode{code: [1108, 2, 3, 0, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [0, 2, 3, 0, 99]
+    end
+
+    test "opcode 8 stores 1 if the first parameter is equal to the second" do
+      {:cont, intcode} = %Intcode{code: [1108, 3, 3, 0, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [1, 3, 3, 0, 99]
+    end
+
+    test "opcode 8 stores 0 if the first parameter is greater than the second" do
+      {:cont, intcode} = %Intcode{code: [1108, 4, 3, 0, 99]} |> Intcode.step()
+      assert intcode.pointer == 4
+      assert intcode.code == [0, 4, 3, 0, 99]
+    end
+
     test "opcode 99 halts" do
       {:halt, intcode} = %Intcode{code: [99, 3, 0, 3, 99]} |> Intcode.step()
       assert intcode.code == [99, 3, 0, 3, 99]
@@ -158,6 +218,46 @@ defmodule IntcodeTest do
       assert intcode.code == [3, 33, 3, 0, 3, 1, 2, 0, 1, 12, 4, 12, 99]
       assert intcode.input == []
       assert intcode.output == [99, 42]
+    end
+
+    test "Day 5 example, equals, position mode" do
+      code = [3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8]
+      {:ok, intcode} = %Intcode{code: code, input: [7]} |> Intcode.execute()
+      assert intcode.output == [0]
+      {:ok, intcode} = %Intcode{code: code, input: [8]} |> Intcode.execute()
+      assert intcode.output == [1]
+      {:ok, intcode} = %Intcode{code: code, input: [9]} |> Intcode.execute()
+      assert intcode.output == [0]
+    end
+
+    test "Day 5 example, less than, position mode" do
+      code = [3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8]
+      {:ok, intcode} = %Intcode{code: code, input: [7]} |> Intcode.execute()
+      assert intcode.output == [1]
+      {:ok, intcode} = %Intcode{code: code, input: [8]} |> Intcode.execute()
+      assert intcode.output == [0]
+      {:ok, intcode} = %Intcode{code: code, input: [9]} |> Intcode.execute()
+      assert intcode.output == [0]
+    end
+
+    test "Day 5 example, equals, immediate mode" do
+      code = [3, 3, 1108, -1, 8, 3, 4, 3, 99]
+      {:ok, intcode} = %Intcode{code: code, input: [7]} |> Intcode.execute()
+      assert intcode.output == [0]
+      {:ok, intcode} = %Intcode{code: code, input: [8]} |> Intcode.execute()
+      assert intcode.output == [1]
+      {:ok, intcode} = %Intcode{code: code, input: [9]} |> Intcode.execute()
+      assert intcode.output == [0]
+    end
+
+    test "Day 5 example, less than, immediate mode" do
+      code = [3, 3, 1107, -1, 8, 3, 4, 3, 99]
+      {:ok, intcode} = %Intcode{code: code, input: [7]} |> Intcode.execute()
+      assert intcode.output == [1]
+      {:ok, intcode} = %Intcode{code: code, input: [8]} |> Intcode.execute()
+      assert intcode.output == [0]
+      {:ok, intcode} = %Intcode{code: code, input: [9]} |> Intcode.execute()
+      assert intcode.output == [0]
     end
   end
 end
