@@ -52,33 +52,21 @@ defmodule Intcode do
   end
 
   defp run_operation(intcode, 1, [arg1_parameter, arg2_parameter, result_parameter]) do
-    value_map =
-      new_value_map()
-      |> load_arg(intcode, :arg1, arg1_parameter)
-      |> load_arg(intcode, :arg2, arg2_parameter)
-
-    case value_map do
-      {:error} ->
-        {:error}
-
-      {:ok, %{arg1: arg1, arg2: arg2}} ->
-        {:cont, intcode |> write_to(result_parameter, arg1 + arg2)}
-    end
+    new_value_map()
+    |> load_arg(intcode, :arg1, arg1_parameter)
+    |> load_arg(intcode, :arg2, arg2_parameter)
+    |> evaluate(fn %{arg1: arg1, arg2: arg2} ->
+      intcode |> write_to(result_parameter, arg1 + arg2)
+    end)
   end
 
   defp run_operation(intcode, 2, [arg1_parameter, arg2_parameter, result_parameter]) do
-    value_map =
-      new_value_map()
-      |> load_arg(intcode, :arg1, arg1_parameter)
-      |> load_arg(intcode, :arg2, arg2_parameter)
-
-    case value_map do
-      {:error} ->
-        {:error}
-
-      {:ok, %{arg1: arg1, arg2: arg2}} ->
-        {:cont, intcode |> write_to(result_parameter, arg1 * arg2)}
-    end
+    new_value_map()
+    |> load_arg(intcode, :arg1, arg1_parameter)
+    |> load_arg(intcode, :arg2, arg2_parameter)
+    |> evaluate(fn %{arg1: arg1, arg2: arg2} ->
+      intcode |> write_to(result_parameter, arg1 * arg2)
+    end)
   end
 
   defp run_operation(intcode, 3, [result_parameter]) do
@@ -88,14 +76,9 @@ defmodule Intcode do
   end
 
   defp run_operation(intcode, 4, [arg_parameter]) do
-    value_map =
-      new_value_map()
-      |> load_arg(intcode, :arg, arg_parameter)
-
-    case value_map do
-      {:error} -> {:error}
-      {:ok, %{arg: arg}} -> {:cont, intcode |> write_output(arg)}
-    end
+    new_value_map()
+    |> load_arg(intcode, :arg, arg_parameter)
+    |> evaluate(fn %{arg: arg} -> intcode |> write_output(arg) end)
   end
 
   defp run_operation(intcode, 99, []) do
@@ -141,5 +124,13 @@ defmodule Intcode do
 
   defp load_arg({:ok, map}, _intcode, arg_name, {:immediate, value}) do
     {:ok, map |> Map.put(arg_name, value)}
+  end
+
+  defp evaluate({:error}, _func) do
+    {:error}
+  end
+
+  defp evaluate({:ok, map}, func) do
+    {:cont, func.(map)}
   end
 end
