@@ -17,6 +17,21 @@ defmodule IntcodeTest do
       {:error} = %Intcode{code: [1, 0, 10, 3, 99]} |> Intcode.step()
     end
 
+    test "opcode 1 with immediate mode on the first arg adds things together" do
+      {:cont, intcode} = %Intcode{code: [101, 0, 0, 3, 99]} |> Intcode.step()
+      assert intcode.code == [101, 0, 0, 101, 99]
+    end
+
+    test "opcode 1 with immediate mode on the second arg adds things together" do
+      {:cont, intcode} = %Intcode{code: [1001, 0, 0, 3, 99]} |> Intcode.step()
+      assert intcode.code == [1001, 0, 0, 1001, 99]
+    end
+
+    test "opcode 1 with immediate mode on both args adds things together" do
+      {:cont, intcode} = %Intcode{code: [1101, 0, 0, 3, 99]} |> Intcode.step()
+      assert intcode.code == [1101, 0, 0, 0, 99]
+    end
+
     test "opcode 2 multiplies things together" do
       {:cont, intcode} = %Intcode{code: [2, 3, 0, 3, 99]} |> Intcode.step()
       assert intcode.code == [2, 3, 0, 6, 99]
@@ -25,6 +40,11 @@ defmodule IntcodeTest do
     test "opcode 2 advances the pointer by 4" do
       {:cont, intcode} = %Intcode{code: [2, 3, 0, 3, 99]} |> Intcode.step()
       assert intcode.pointer == 4
+    end
+
+    test "opcode 2 works with immediate mode" do
+      {:cont, intcode} = %Intcode{code: [1002, 4, 3, 4, 33]} |> Intcode.step()
+      assert intcode.code == [1002, 4, 3, 4, 99]
     end
 
     test "opcode 3 stores an input argument" do
