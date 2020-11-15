@@ -80,4 +80,42 @@ defmodule Day6Test do
       assert orbits |> Day6.full_orbit_count() == 42
     end
   end
+
+  describe "transfers_to_santa" do
+    test "works when you and Santa are already orbiting the same thing" do
+      orbits = Day6.orbit_map(["COM)B", "B)YOU", "B)SAN"])
+      assert orbits |> Day6.transfers_to_santa() == 0
+    end
+
+    test "works when you are one orbit out from Santa" do
+      orbits = Day6.orbit_map(["COM)B", "C)YOU", "B)SAN", "B)C"])
+      assert orbits |> Day6.transfers_to_santa() == 1
+    end
+
+    test "works when Santa is one orbit out from you" do
+      orbits = Day6.orbit_map(["COM)C", "C)YOU", "B)SAN", "C)B"])
+      assert orbits |> Day6.transfers_to_santa() == 1
+    end
+
+    test "example input" do
+      orbits =
+        Day6.orbit_map([
+          "COM)B",
+          "B)C",
+          "C)D",
+          "D)E",
+          "E)F",
+          "B)G",
+          "G)H",
+          "D)I",
+          "E)J",
+          "J)K",
+          "K)L",
+          "K)YOU",
+          "I)SAN"
+        ])
+
+      assert orbits |> Day6.transfers_to_santa() == 4
+    end
+  end
 end
