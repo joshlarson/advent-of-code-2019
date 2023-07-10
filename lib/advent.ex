@@ -9,19 +9,16 @@ defmodule Advent do
       "day6" => Day6
     }
 
-    {day_n, mod} =
+    day_n =
       if Enum.any?(args) do
-        key = List.first(args)
-        {key, mods[key]}
+        List.first(args)
       else
-        last_tuple_of(mods)
+        "day6"
       end
+
+    mod = mods[day_n]
 
     IO.puts("Running #{day_n}")
     mod.main
-  end
-
-  defp last_tuple_of(map) do
-    map |> Enum.to_list() |> List.last()
   end
 end
