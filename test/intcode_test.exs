@@ -57,6 +57,12 @@ defmodule IntcodeTest do
       assert intcode.input == []
     end
 
+    test "opcode 3 waits if there is no input and does not advance the pointer" do
+      {:wait, intcode} = %Intcode{code: [3, 1, 99], input: []} |> Intcode.step()
+      assert intcode.code == [3, 1, 99]
+      assert intcode.pointer == 0
+    end
+
     test "opcode 3 only consumes one input argument" do
       {:cont, intcode} = %Intcode{code: [3, 1, 99], input: [100, 50]} |> Intcode.step()
       assert intcode.input == [50]
@@ -80,6 +86,11 @@ defmodule IntcodeTest do
     test "opcode 4 advances the pointer by 2" do
       {:cont, intcode} = %Intcode{code: [4, 2, 99]} |> Intcode.step()
       assert intcode.output == [99]
+    end
+
+    test "opcode 4 writes a value to the beginning of the output list" do
+      {:cont, intcode} = %Intcode{code: [4, 2, 99], output: [0]} |> Intcode.step()
+      assert intcode.output == [99, 0]
     end
 
     test "opcode 5 jumps if its argument is non-zero" do
@@ -142,9 +153,10 @@ defmodule IntcodeTest do
       assert intcode.code == [0, 4, 3, 0, 99]
     end
 
-    test "opcode 99 halts" do
+    test "opcode 99 halts and does not advance the pointer" do
       {:halt, intcode} = %Intcode{code: [99, 3, 0, 3, 99]} |> Intcode.step()
       assert intcode.code == [99, 3, 0, 3, 99]
+      assert intcode.pointer == 0
     end
 
     test "example, step 1" do
@@ -169,7 +181,7 @@ defmodule IntcodeTest do
         |> Intcode.step()
 
       assert intcode.code == [3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]
-      assert intcode.pointer == 9
+      assert intcode.pointer == 8
     end
   end
 
@@ -208,6 +220,16 @@ defmodule IntcodeTest do
       assert intcode.code == [3, 5, 3, 4, 3, 6, 99]
       assert intcode.input == [17]
       assert intcode.output == []
+    end
+
+    test "input example with waiting" do
+      {:waiting, intcode} =
+        %Intcode{code: [3, 5, 3, 4, 5, 0, 6], input: [6, 3]} |> Intcode.execute()
+
+      assert intcode.code == [3, 5, 3, 4, 3, 6, 6]
+      assert intcode.input == []
+      assert intcode.output == []
+      assert intcode.pointer == 4
     end
 
     test "output example" do
@@ -258,6 +280,61 @@ defmodule IntcodeTest do
       assert intcode.output == [0]
       {:ok, intcode} = %Intcode{code: code, input: [9]} |> Intcode.execute()
       assert intcode.output == [0]
+    end
+  end
+
+  describe "add_input" do
+    test "adds the given input" do
+      intcode = %Intcode{code: [4, 2, 99]} |> Intcode.add_input([1, 2, 3])
+
+      assert intcode.input == [1, 2, 3]
+    end
+
+    test "does not overwrite existing input" do
+      intcode = %Intcode{code: [4, 2, 99], input: [9, 8, 7]} |> Intcode.add_input([1, 2, 3])
+
+      assert intcode.input == [9, 8, 7, 1, 2, 3]
+    end
+
+    test "does not change the code" do
+      intcode = %Intcode{code: [4, 2, 99]} |> Intcode.add_input([1, 2, 3])
+
+      assert intcode.code == [4, 2, 99]
+    end
+  end
+
+  describe "connect" do
+    test "moves the output from the src intcode to the dst input (and reverses it)" do
+      {intcode0, intcode1} =
+        Intcode.connect(
+          %Intcode{code: [4, 2, 99], output: [1, 2, 3]},
+          %Intcode{code: [3, 2, 0]}
+        )
+
+      assert intcode0.output == []
+      assert intcode1.input == [3, 2, 1]
+    end
+
+    test "does not overwrite existing input for the dst" do
+      {intcode0, intcode1} =
+        Intcode.connect(
+          %Intcode{code: [4, 2, 99], output: [1, 2, 3]},
+          %Intcode{code: [3, 2, 0], input: [9, 8, 7]}
+        )
+
+      assert intcode0.output == []
+      assert intcode1.input == [9, 8, 7, 3, 2, 1]
+    end
+
+    test "does not change the codes for either program" do
+      {intcode0, intcode1} =
+        Intcode.connect(
+          %Intcode{code: [4, 2, 99]},
+          %Intcode{code: [3, 2, 0]}
+        )
+
+      assert intcode0.code == [4, 2, 99]
+      assert intcode1.code == [3, 2, 0]
     end
   end
 end

@@ -5,6 +5,7 @@ defmodule Intcode do
     case step(intcode) do
       {:cont, new_intcode} -> execute(new_intcode)
       {:halt, new_intcode} -> {:ok, new_intcode}
+      {:wait, new_intcode} -> {:waiting, new_intcode}
       {:error} -> {:error}
     end
   end
@@ -12,6 +13,21 @@ defmodule Intcode do
   def step(intcode) do
     {new_intcode, opcode, args} = read_args(intcode)
     run_operation(new_intcode, opcode, args)
+  end
+
+  def add_input(intcode = %Intcode{input: existing_input}, new_input) do
+    %Intcode{intcode | input: existing_input ++ new_input}
+  end
+
+  def clear_output(intcode) do
+    %Intcode{intcode | output: []}
+  end
+
+  def connect(src_intcode = %Intcode{output: signal}, dst_intcode) do
+    {
+      src_intcode |> clear_output,
+      dst_intcode |> add_input(Enum.reverse(signal))
+    }
   end
 
   defp read_args(intcode) do
@@ -74,9 +90,12 @@ defmodule Intcode do
   end
 
   defp run_operation(intcode, 3, [result_parameter]) do
-    {:ok, {intcode, input}} = intcode |> consume_input()
-
-    {:cont, intcode |> write_to(result_parameter, input)}
+    case intcode |> consume_input() do
+      {:ok, {new_intcode, input}} -> {:cont, new_intcode |> write_to(result_parameter, input)}
+      # Retracting the pointer is a hack to accomodate the fact that under normal operation, the
+      # pointer is advanced before the command is run.
+      {:error} -> {:wait, intcode |> advance_pointer(-2)}
+    end
   end
 
   defp run_operation(intcode, 4, [arg_parameter]) do
@@ -132,7 +151,9 @@ defmodule Intcode do
   end
 
   defp run_operation(intcode, 99, []) do
-    {:halt, intcode}
+    # Retracting the pointer is a hack to accomodate the fact that under normal operation, the
+    # pointer is advanced before the command is run.
+    {:halt, intcode |> advance_pointer(-1)}
   end
 
   defp write_to(intcode, {:position, address}, value) do
@@ -151,6 +172,10 @@ defmodule Intcode do
 
   defp jump_to(intcode, new_location) do
     %Intcode{intcode | pointer: new_location}
+  end
+
+  defp consume_input(%Intcode{input: []}) do
+    {:error}
   end
 
   defp consume_input(intcode = %Intcode{input: [first | rest]}) do
