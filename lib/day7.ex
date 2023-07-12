@@ -18,19 +18,25 @@ defmodule Day7 do
   end
 
   def amplify(code: code, phase_settings: phase_settings) do
-    amplify_helper(code: code, phase_settings: phase_settings, signal: 0)
+    [first_intcode | remaining_intcodes] =
+      phase_settings |> Enum.map(fn setting -> %Intcode{code: code, input: [setting]} end)
+
+    intcodes = [first_intcode |> Intcode.add_input([0]) | remaining_intcodes] |> execute_all()
+
+    {:ok, result_intcode} = intcodes |> List.last()
+    result_intcode.output |> List.first()
   end
 
-  defp amplify_helper(code: _code, phase_settings: [], signal: signal) do
-    signal
+  def execute_all([intcode]) do
+    [intcode |> Intcode.execute()]
   end
 
-  defp amplify_helper(code: code, phase_settings: [setting | rest_of_settings], signal: input_signal) do
-    {:ok, intcode} = %Intcode{code: code, input: [setting, input_signal]} |> Intcode.execute()
+  def execute_all([intcode0 | [intcode1 | tail_intcodes]]) do
+    {:ok, executed_intcode0} = intcode0 |> Intcode.execute()
 
-    [output_signal | _] = intcode.output
+    {processed_intcode0, intcode1_with_input} = Intcode.connect(executed_intcode0, intcode1)
 
-    amplify_helper(code: code, phase_settings: rest_of_settings, signal: output_signal)
+    [{:ok, processed_intcode0} | execute_all([intcode1_with_input | tail_intcodes])]
   end
 
   def permutations([]) do
