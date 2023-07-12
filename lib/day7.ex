@@ -8,6 +8,7 @@ defmodule Day7 do
       |> Enum.map(&(Integer.parse(&1) |> elem(0)))
 
     IO.puts(max_thruster_signal(code: code, phase_settings: [0, 1, 2, 3, 4]))
+    IO.puts(max_thruster_signal(code: code, phase_settings: [5, 6, 7, 8, 9]))
   end
 
   def max_thruster_signal(code: code, phase_settings: phase_settings) do
@@ -21,22 +22,51 @@ defmodule Day7 do
     [first_intcode | remaining_intcodes] =
       phase_settings |> Enum.map(fn setting -> %Intcode{code: code, input: [setting]} end)
 
-    intcodes = [first_intcode |> Intcode.add_input([0]) | remaining_intcodes] |> execute_all()
+    intcodes =
+      [first_intcode |> Intcode.add_input([0]) | remaining_intcodes] |> execute_all_loop()
 
     {:ok, result_intcode} = intcodes |> List.last()
     result_intcode.output |> List.first()
   end
 
-  def execute_all([intcode]) do
+  defp execute_all_loop(intcodes) do
+    result = execute_all(intcodes)
+
+    case result |> all_are_ok?() do
+      true -> result
+      false -> result |> just_intcodes() |> connect_loop() |> execute_all_loop()
+    end
+  end
+
+  defp execute_all([intcode]) do
     [intcode |> Intcode.execute()]
   end
 
-  def execute_all([intcode0 | [intcode1 | tail_intcodes]]) do
-    {:ok, executed_intcode0} = intcode0 |> Intcode.execute()
+  defp execute_all([intcode0 | [intcode1 | tail_intcodes]]) do
+    {status0, executed_intcode0} = intcode0 |> Intcode.execute()
 
     {processed_intcode0, intcode1_with_input} = Intcode.connect(executed_intcode0, intcode1)
 
-    [{:ok, processed_intcode0} | execute_all([intcode1_with_input | tail_intcodes])]
+    [{status0, processed_intcode0} | execute_all([intcode1_with_input | tail_intcodes])]
+  end
+
+  defp all_are_ok?(intcode_results) do
+    intcode_results |> Enum.all?(fn {status, _intcode} -> status == :ok end)
+  end
+
+  defp just_intcodes(intcode_results) do
+    intcode_results |> Enum.map(fn {_status, intcode} -> intcode end)
+  end
+
+  defp connect_loop(intcodes) do
+    first = List.first(intcodes)
+    last = List.last(intcodes)
+
+    {new_last, new_first} = Intcode.connect(last, first)
+
+    intcodes
+    |> List.replace_at(0, new_first)
+    |> List.replace_at(Enum.count(intcodes) - 1, new_last)
   end
 
   def permutations([]) do
