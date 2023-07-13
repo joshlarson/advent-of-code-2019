@@ -66,4 +66,36 @@ defmodule Day8Test do
       assert layer |> Day8.count_of("7") == 1
     end
   end
+
+  describe "display" do
+    test "renders a single layer as a block of the given width and height" do
+      image = Day8.parse_image(encoded: "111111", width: 3, height: 2)
+
+      assert image |> Day8.display() == "111\n111"
+    end
+
+    test "renders 0's as spaces" do
+      image = Day8.parse_image(encoded: "100110", width: 3, height: 2)
+
+      assert image |> Day8.display() == "1  \n11 "
+    end
+
+    test "renders the first layer if it consists of 0's and 1's" do
+      image = Day8.parse_image(encoded: "100110000001", width: 3, height: 2)
+
+      assert image |> Day8.display() == "1  \n11 "
+    end
+
+    test "treats 2's in the first layer as transparent" do
+      image = Day8.parse_image(encoded: "200112000001", width: 3, height: 2)
+
+      assert image |> Day8.display() == "   \n111"
+    end
+
+    test "allow multiple layers of transparency" do
+      image = Day8.parse_image(encoded: "200112222222000001", width: 3, height: 2)
+
+      assert image |> Day8.display() == "   \n111"
+    end
+  end
 end
