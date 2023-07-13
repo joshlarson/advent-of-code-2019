@@ -7,14 +7,15 @@ defmodule Advent do
       "day4" => Day4,
       "day5" => Day5,
       "day6" => Day6,
-      "day7" => Day7
+      "day7" => Day7,
+      "day8" => Day8
     }
 
     day_n =
       if Enum.any?(args) do
         List.first(args)
       else
-        "day7"
+        "day8"
       end
 
     mod = mods[day_n]
