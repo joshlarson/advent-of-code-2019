@@ -20,7 +20,8 @@ defmodule Day7 do
 
   def amplify(code: code, phase_settings: phase_settings) do
     [first_intcode | remaining_intcodes] =
-      phase_settings |> Enum.map(fn setting -> %Intcode{code: code, input: [setting]} end)
+      phase_settings
+      |> Enum.map(fn setting -> Intcode.new(code: code) |> Intcode.add_input([setting]) end)
 
     intcodes =
       [first_intcode |> Intcode.add_input([0]) | remaining_intcodes] |> execute_all_loop()

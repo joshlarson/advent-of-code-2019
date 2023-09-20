@@ -1,5 +1,30 @@
 defmodule Intcode do
-  defstruct code: [], pointer: 0, input: [], output: []
+  defstruct memory: %{}, pointer: 0, input: [], output: []
+
+  def new(args) do
+    defaults = [pointer: 0, output: []]
+
+    %{code: code, pointer: pointer, output: output} =
+      Keyword.merge(defaults, args) |> Enum.into(%{})
+
+    memory =
+      code
+      |> Enum.with_index()
+      |> Enum.map(fn {value, index} -> {index, value} end)
+      |> Map.new()
+
+    %Intcode{memory: memory, pointer: pointer, output: output}
+  end
+
+  def code(%Intcode{memory: memory}, length) do
+    0..(length - 1)
+    |> Enum.map(fn i ->
+      case memory do
+        %{^i => v} -> v
+        %{} -> 0
+      end
+    end)
+  end
 
   def execute(intcode) do
     case step(intcode) do
@@ -31,7 +56,7 @@ defmodule Intcode do
   end
 
   defp read_args(intcode) do
-    full_opcode = intcode.code |> Enum.at(intcode.pointer)
+    full_opcode = intcode |> memory_at(intcode.pointer)
 
     opcode = rem(full_opcode, 100)
 
@@ -42,22 +67,27 @@ defmodule Intcode do
 
     arg_count =
       %{
-        1 => 4,
-        2 => 4,
-        3 => 2,
-        4 => 2,
-        5 => 3,
-        6 => 3,
-        7 => 4,
-        8 => 4,
-        99 => 1
+        1 => 3,
+        2 => 3,
+        3 => 1,
+        4 => 1,
+        5 => 2,
+        6 => 2,
+        7 => 3,
+        8 => 3,
+        99 => 0
       }
       |> Map.get(opcode)
 
+    arg_addresses =
+      case arg_count do
+        0 -> []
+        _ -> (intcode.pointer + 1)..(intcode.pointer + arg_count)
+      end
+
     args =
-      intcode.code
-      |> Enum.drop(intcode.pointer + 1)
-      |> Enum.take(arg_count - 1)
+      arg_addresses
+      |> Enum.map(fn i -> intcode |> memory_at(i) end)
       |> Enum.zip(op_flags)
       |> Enum.map(fn
         {arg, 0} -> {:position, arg}
@@ -65,7 +95,7 @@ defmodule Intcode do
       end)
 
     {
-      intcode |> advance_pointer(arg_count),
+      intcode |> advance_pointer(arg_count + 1),
       opcode,
       args
     }
@@ -159,7 +189,7 @@ defmodule Intcode do
   defp write_to(intcode, {:position, address}, value) do
     %Intcode{
       intcode
-      | code: intcode.code |> List.replace_at(address, value)
+      | memory: intcode.memory |> Map.put(address, value)
     }
   end
 
@@ -195,14 +225,20 @@ defmodule Intcode do
   end
 
   defp load_arg({:ok, map}, intcode, arg_name, {:position, address}) do
-    case Enum.at(intcode.code, address) do
-      nil -> {:error}
-      value -> {:ok, map |> Map.put(arg_name, value)}
-    end
+    value = intcode |> memory_at(address)
+
+    {:ok, map |> Map.put(arg_name, value)}
   end
 
   defp load_arg({:ok, map}, _intcode, arg_name, {:immediate, value}) do
     {:ok, map |> Map.put(arg_name, value)}
+  end
+
+  defp memory_at(%Intcode{memory: memory}, address) do
+    case memory do
+      %{^address => value} -> value
+      %{} -> 0
+    end
   end
 
   defp evaluate({:error}, _func) do

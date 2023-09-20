@@ -49,12 +49,12 @@ defmodule Day2 do
   end
 
   defp convert_to_intcode(code) do
-    %Intcode{code: code}
+    Intcode.new(code: code)
   end
 
   defp convert_from_intcode(result) do
     case result do
-      {:ok, %Intcode{code: code}} -> {:ok, code}
+      {:ok, intcode} -> {:ok, intcode |> Intcode.code(1)}
       {:error} -> {:error}
     end
   end
