@@ -1,5 +1,5 @@
 defmodule Intcode do
-  defstruct memory: %{}, pointer: 0, input: [], output: []
+  defstruct memory: %{}, pointer: 0, input: [], output: [], relative_base: 0
 
   def new(args) do
     defaults = [pointer: 0, output: []]
@@ -75,6 +75,7 @@ defmodule Intcode do
         6 => 2,
         7 => 3,
         8 => 3,
+        9 => 1,
         99 => 0
       }
       |> Map.get(opcode)
@@ -92,6 +93,7 @@ defmodule Intcode do
       |> Enum.map(fn
         {arg, 0} -> {:position, arg}
         {arg, 1} -> {:immediate, arg}
+        {arg, 2} -> {:relative, arg}
       end)
 
     {
@@ -180,6 +182,15 @@ defmodule Intcode do
     end)
   end
 
+  defp run_operation(intcode, 9, [arg_parameter]) do
+    new_value_map()
+    |> load_arg(intcode, :base_adjustment, arg_parameter)
+    |> evaluate(fn
+      %{base_adjustment: base_adjustment} ->
+        %Intcode{intcode | relative_base: intcode.relative_base + base_adjustment}
+    end)
+  end
+
   defp run_operation(intcode, 99, []) do
     # Retracting the pointer is a hack to accomodate the fact that under normal operation, the
     # pointer is advanced before the command is run.
@@ -190,6 +201,13 @@ defmodule Intcode do
     %Intcode{
       intcode
       | memory: intcode.memory |> Map.put(address, value)
+    }
+  end
+
+  defp write_to(intcode, {:relative, address}, value) do
+    %Intcode{
+      intcode
+      | memory: intcode.memory |> Map.put(address + intcode.relative_base, value)
     }
   end
 
@@ -231,6 +249,12 @@ defmodule Intcode do
   end
 
   defp load_arg({:ok, map}, _intcode, arg_name, {:immediate, value}) do
+    {:ok, map |> Map.put(arg_name, value)}
+  end
+
+  defp load_arg({:ok, map}, intcode, arg_name, {:relative, address}) do
+    value = intcode |> memory_at(address + intcode.relative_base)
+
     {:ok, map |> Map.put(arg_name, value)}
   end
 

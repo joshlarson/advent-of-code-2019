@@ -176,6 +176,27 @@ defmodule IntcodeTest do
       assert intcode |> Intcode.code(5) == [0, 4, 3, 0, 99]
     end
 
+    test "opcode 9 updates the relative base - add with the first arg in relative mode" do
+      intcode = Intcode.new(code: [109, 2, 201, 0, 2, 0, 99])
+      {:cont, intcode} = intcode |> Intcode.step()
+      {:cont, intcode} = intcode |> Intcode.step()
+      assert intcode |> Intcode.code(7) == [402, 2, 201, 0, 2, 0, 99]
+    end
+
+    test "opcode 9 updates the relative base - add with the second arg in relative mode" do
+      intcode = Intcode.new(code: [109, 2, 2001, 2, 0, 0, 99])
+      {:cont, intcode} = intcode |> Intcode.step()
+      {:cont, intcode} = intcode |> Intcode.step()
+      assert intcode |> Intcode.code(7) == [4002, 2, 2001, 2, 0, 0, 99]
+    end
+
+    test "opcode 9 updates the relative base - add with the output arg in relative mode" do
+      intcode = Intcode.new(code: [109, 2, 20001, 2, 2, 0, 99])
+      {:cont, intcode} = intcode |> Intcode.step()
+      {:cont, intcode} = intcode |> Intcode.step()
+      assert intcode |> Intcode.code(7) == [109, 2, 40002, 2, 2, 0, 99]
+    end
+
     test "opcode 99 halts and does not advance the pointer" do
       {:halt, intcode} = Intcode.new(code: [99, 3, 0, 3, 99]) |> Intcode.step()
       assert intcode |> Intcode.code(5) == [99, 3, 0, 3, 99]
@@ -308,6 +329,47 @@ defmodule IntcodeTest do
       assert intcode.output == [0]
       {:ok, intcode} = Intcode.new(code: code) |> Intcode.add_input([9]) |> Intcode.execute()
       assert intcode.output == [0]
+    end
+
+    test "Day 9 example, quine" do
+      {:ok, intcode} =
+        Intcode.new(
+          code: [109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99]
+        )
+        |> Intcode.execute()
+
+      assert intcode.output ==
+               [
+                 109,
+                 1,
+                 204,
+                 -1,
+                 1001,
+                 100,
+                 1,
+                 100,
+                 1008,
+                 100,
+                 16,
+                 101,
+                 1006,
+                 101,
+                 0,
+                 99
+               ]
+               |> Enum.reverse()
+    end
+
+    test "Day 9 example, 16-digit number output" do
+      {:ok, intcode} =
+        Intcode.new(code: [1102, 34_915_192, 34_915_192, 7, 4, 7, 99, 0]) |> Intcode.execute()
+
+      assert intcode.output == [1_219_070_632_396_864]
+    end
+
+    test "Day 9 example, large numbers" do
+      {:ok, intcode} = Intcode.new(code: [104, 1_125_899_906_842_624, 99]) |> Intcode.execute()
+      assert intcode.output == [1_125_899_906_842_624]
     end
   end
 
