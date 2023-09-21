@@ -9,5 +9,8 @@ defmodule Day9 do
 
     {:ok, intcode} = Intcode.new(code: code) |> Intcode.add_input([1]) |> Intcode.execute()
     IO.puts(intcode.output |> List.first())
+
+    {:ok, intcode} = Intcode.new(code: code) |> Intcode.add_input([2]) |> Intcode.execute()
+    IO.puts(intcode.output |> List.first())
   end
 end
